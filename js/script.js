@@ -10,8 +10,11 @@ var channels = [
     octoberfest
 ];
 
-/** create global variable */
+/** create global variables */
 var currentChannel;
+
+// New: store selcetd channel globally
+var selectedChannelElement ='<li class="selected">"#Yummy"</li>';
 
 /** We simply initialize it with the channel selected by default - sevencontinents */
 currentChannel = sevencontinents;
@@ -23,11 +26,57 @@ var currentLocation = {
     what3words: "shelf.jetted.purple"
 };
 
+
+
+
+function updateMessage() {
+   
+    var selectedChannelName = currentChannel;
+    console.log('CurrentChannel: ', currentChannel);
+   
+    //New: Messages will be updated every 10 seconds in terms of remaining time.
+    //New:  If the remaining time is < 5 minutes, the “5 min. left” button will be in primary color
+    //New: If there is no remaining time, no messages will be created.
+    //var lengthSelectedMessages = channels[selectedChannelName].messages.length;
+    var expiresIn=0;
+    //console.log('Length MessageArry: ', lengthSelectedMessages);
+   
+   //$.each(currentChannel.messages, function(){
+   for (i=0;i<currentChannel.messages.length;i++){
+      //console.log('CurrentChannel.messages.expiresOn: ', currentChannel.messages[i].expiresOn);
+      expiresIn = Math.round((currentChannel.messages[i].expiresOn - Date.now()) / 1000 / 60);
+      console.log('Expires on : ', expiresIn);
+      if (expiresIn >= 300000){
+        console.log('Message expires in >10000 milli seonds');
+      $('#messages').append(  createMessageElement( currentChannel.messages[i]));
+      } else if (expiresIn <= 300000){
+          console.log('Message expires in <= 10000 milli seonds');
+          //$('#messages button').removeClass('accent');
+          //$('#messages button').addClass('primary');
+          //$('#messages em').style.color('#3F51B5');
+          $('#messages em').css({"color": '#3F51B5'});
+       } else if (expiresIn == 0){
+         console.log('Message expired');
+      };
+   }
+   //);
+
+    /*for (i=0;i<lengthSelectedMessages;i++){
+        //createMessageElement( channels[selectedChannelName].messages[i]) ;
+        console.log ('Message 1', currentChannel.messages[i]);
+        //createMessageElement( currentChannel.messages[i]);
+        $('#messages').append(  createMessageElement( currentChannel.messages[i]));
+    }*/
+
+}
+
+
+
 /**
  * Switch channels name in the right app bar
  * @param channelObject
  */
-function switchChannel(channelObject) {
+function switchChannel(channelObject, channelElement) {
     // Log the channel switch
     console.log("Tuning in to channel", channelObject);
 
@@ -49,14 +98,46 @@ function switchChannel(channelObject) {
     $('#channel-star i').addClass(channelObject.starred ? 'fas' : 'far');
 
 
+    /* currentChannel will be set to selected channel object*/
+    $(channelElement).removeClass('selected');
+    selectedChannelElement = channelElement;
+    $(channelElement).addClass('selected');
+    //console.log('selected new Channel: ', selectedChannelElement);
+    
+
+
     /* highlight the selected #channel.
        This is inefficient (jQuery has to search all channel list items), but we'll change it later on */
     $('#channels li').removeClass('selected');
-    $('#channels li:contains(' + channelObject.name + ')').addClass('selected');
+    
+    //New: Remove ineffecient code and replace it by more efficient code below
+    //$('#channels li:contains(' + channelObject.name + ')').addClass('selected');
+    $(channelElement).addClass('selected');
+    //$('#channels li:contains(#KillerApp)').addClass('selected');
 
-    /* store selected channel in global variable */
-    currentChannel = channelObject;
-}
+    showMessages();
+
+ }
+
+
+ function showMessages(){
+    updateMessage();
+ }
+
+
+//setInterval(function(){ updateMessageButton()}, 10000);
+//function updateMessageButton(){
+    //New: Add listener to ttl button and increase expiration time
+    $('#messages button').click(function(){
+        expiresIn = expiresIn + 300000;
+        messageObject.expiresIn = expiresIn;
+        console.log('Increased expiration date: ', expiresIn);
+        updateMessage();
+    });
+//};
+
+
+
 
 /* liking a channel on #click */
 function star() {
@@ -79,7 +160,7 @@ function star() {
  */
 function selectTab(tabId) {
     $('#tab-bar button').removeClass('selected');
-    console.log('Changing to tab', tabId);
+    //console.log('Changing to tab', tabId);
     $(tabId).addClass('selected');
 }
 
@@ -126,6 +207,9 @@ function Message(text) {
     this.text = text;
     // own message
     this.own = true;
+   
+    //New: Move imp. update functionality in contructor
+    updateMessage();
 }
 
 function sendMessage() {
@@ -145,7 +229,8 @@ function sendMessage() {
 
     // #10 #push the new #message to the current channel's messages array
     currentChannel.messages.push(message);
-
+    
+    
     // #10 #increase the messageCount of the current channel
     currentChannel.messageCount+=1;
 
@@ -167,9 +252,22 @@ function sendMessage() {
 function createMessageElement(messageObject) {
     // Calculating the expiresIn-time from the expiresOn-property
     var expiresIn = Math.round((messageObject.expiresOn - Date.now()) / 1000 / 60);
+    var messageText = '<div class="message'+
+    //this dynamically adds #own to the #message, based on the
+    //ternary operator. We need () in order not to disrupt the return.
+    (messageObject.own ? ' own' : '') +
+    '">' +
+    '<h3><a href="http://w3w.co/' + messageObject.createdBy + '" target="_blank">'+
+    '<strong>' + messageObject.createdBy + '</strong></a>' +
+    messageObject.createdOn.toLocaleString() +
+    '<em>' + expiresIn + ' min. left</em></h3>' +
+    '<p>' + messageObject.text + '</p>' +
+    '<button class="accent">+5 min.</button>' +
+    '</div>';
+;
 
     // Creating a message-element
-    return '<div class="message'+
+    /*return '<div class="message'+
         //this dynamically adds #own to the #message, based on the
         //ternary operator. We need () in order not to disrupt the return.
         (messageObject.own ? ' own' : '') +
@@ -180,7 +278,9 @@ function createMessageElement(messageObject) {
         '<em>' + expiresIn + ' min. left</em></h3>' +
         '<p>' + messageObject.text + '</p>' +
         '<button class="accent">+5 min.</button>' +
-        '</div>';
+        '</div>';*/
+
+    return messageText;
 }
 
 /* #10 Three #compare functions to #sort channels */
@@ -215,6 +315,8 @@ function compareFavorites(channelA, channelB) {
 }
 
 function listChannels(criterion) {
+
+    //console.log('In listChannels angekommen und Wert von channel object', currentChannel);
     // #10 #sorting: #sort channels#array by the criterion #parameter
     channels.sort(criterion);
 
@@ -223,9 +325,18 @@ function listChannels(criterion) {
 
     /* #10 append channels from #array with a #for loop */
     for (i = 0; i < channels.length; i++) {
+        //console.log('In Schleife in listChannels channel: ', channels[i]);
         $('#channels ul').append(createChannelElement(channels[i]));
+      
     };
-}
+    
+    //New: Highlight currently selected channel after sorting
+    //console.log('Neues selected global channelElement: ', selectedChannelElement);
+    console.log('UL: ',$("ul"));
+
+    $('#channels li').removeClass('selected');
+    $(selectedChannelElement).addClass('selected');
+    }
 
 /**
  * #10 #new: This constructor function creates a new channel object.
@@ -308,6 +419,7 @@ function createChannelElement(channelObject) {
      </li>
      */
 
+        
     // create a channel
     var channel = $('<li>').text(channelObject.name);
 
@@ -324,6 +436,14 @@ function createChannelElement(channelObject) {
 
     // The chevron
     $('<i>').addClass('fas').addClass('fa-chevron-right').appendTo(meta);
+
+    //New: Add a click event listener to selected li html element; call switchChannel function when clicking on li element, submitting this reference on selceted li element;
+    $("li").click(function(){
+        //console.log('this: ', this);
+        //var temp = this.target.nodeName;
+        //console.log('targetNode: ', temp);
+        switchChannel(channelObject, this);
+       });
 
     // return the complete channel
     return channel;

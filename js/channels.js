@@ -52,3 +52,29 @@ var octoberfest = {
     messages : []           // #10 #message s property in #chl object
 
 };
+
+var currentLocation = {longitude: 47.793358399999995,latitude: -4.286696};
+
+var message1 = {
+    createdBy: "France.Bretagne.Gulvinec",
+    latitude: currentLocation.latitude,
+    longitude: currentLocation.longitude,
+    createdOn: new Date(),
+    expiresOn: new Date(Date.now() + 15 * 60 * 1000),
+    text: 'messagetext1',
+    own : true,          
+};
+
+var message2 = {
+    createdBy: "France.Bretagne.Gulvinec",
+    latitude: currentLocation.latitude,
+    longitude: currentLocation.longitude,
+    createdOn: new Date(),
+    expiresOn: new Date(Date.now() + 15 * 60 * 1000),
+    text: 'messagetext2',
+    own : true,          
+};
+
+killerapp.messages[0] = message1;
+killerapp.messages[1] = message2;
+
